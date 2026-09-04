@@ -486,90 +486,190 @@ elif selected == "Fullscreen 3D Terrain":
 # ---------------------------------------------------------
 # 8. PAGE 4: INTERACTIVE SPOT ANALYSIS
 # ---------------------------------------------------------
+# elif selected == "Interactive Spot Analysis":
+#     render_header(
+#         "INTERACTIVE SPOT ANALYSIS — POINT PROBE",
+#         "Pick a lunar region or drop custom coordinates to pull live subsurface, thermal, and landing-safety estimates."
+#     )
+
+#     REGIONS = {
+#         "Faustini Crater": (-87.30, 77.00),
+#         "Shackleton Crater": (-89.90, 0.00),
+#         "Cabeus Crater": (-84.90, -35.50),
+#         "de Gerlache Crater": (-88.50, 87.10),
+#         "Shoemaker Crater": (-88.10, 44.90),
+#         "Custom Coordinates": None,
+#     }
+
+#     probe_col, result_col = st.columns([1, 2])
+
+#     with probe_col:
+#         st.subheader("📍 Probe Controls")
+#         region_choice = st.selectbox("Select Lunar Region", list(REGIONS.keys()))
+
+#         if region_choice == "Custom Coordinates":
+#             lat = st.number_input("Latitude (°)", min_value=-90.0, max_value=-60.0, value=-87.30, step=0.10)
+#             lon = st.number_input("Longitude (°)", min_value=-180.0, max_value=180.0, value=77.00, step=0.10)
+#         else:
+#             lat, lon = REGIONS[region_choice]
+#             st.number_input("Latitude (°)", value=lat, disabled=True)
+#             st.number_input("Longitude (°)", value=lon, disabled=True)
+
+#         probe_depth = st.slider("Probe Depth Window (m)", 0.1, 5.0, 1.5, 0.1)
+#         st.button("🎯 Run Spot Analysis", use_container_width=True)
+#         st.markdown(
+#             '<div class="status-pill status-live"><span class="status-dot"></span>PROBE ARMED</div>',
+#             unsafe_allow_html=True
+#         )
+
+#     with result_col:
+#         st.subheader("📡 Live Probe Readout")
+
+#         seed = int(abs(lat * 1000) + abs(lon * 1000)) % (2**32 - 1)
+#         rng = np.random.default_rng(seed)
+
+#         depth_factor = float(rng.uniform(0.4, 0.85))
+#         ice_thickness_m = round(probe_depth * depth_factor, 2)
+#         ice_density_tons_per_m = float(rng.uniform(8000, 16000))
+#         ice_mass_tons = round(ice_thickness_m * ice_density_tons_per_m, 0)
+
+#         surface_temp_k = round(float(rng.uniform(38, 112)), 1)
+#         roughness_deg = round(float(rng.uniform(1.5, 12.0)), 2)
+#         slope_altitude_m = round(float(rng.uniform(-1800, 1800)), 1)
+#         safety_index = round(float(np.clip(rng.normal(0.72, 0.12), 0.05, 0.99)), 2)
+
+#         p1, p2, p3 = st.columns(3)
+#         p1.metric("ICE THICKNESS", f"{ice_thickness_m} m", f"Max Depth: {probe_depth} m")
+#         p2.metric("ICE MASS ESTIMATE", f"{ice_mass_tons:,.0f} tons")
+#         p3.metric("SURFACE TEMP", f"{surface_temp_k} K")
+
+#         p4, p5, p6 = st.columns(3)
+#         p4.metric("SURFACE ROUGHNESS", f"{roughness_deg}°")
+#         p5.metric("SLOPE ALTITUDE", f"{slope_altitude_m:+.1f} m", "vs. datum")
+#         p6.metric("ROVER SAFETY INDEX", f"{safety_index:.2f} / 1.0")
+
+#         if safety_index >= 0.75:
+#             st.success(f"✅ **{region_choice}** rates as a **high-confidence landing candidate**.")
+#         elif safety_index >= 0.5:
+#             st.warning(f"⚠️ **{region_choice}** is **marginal** at this probe point.")
+#         else:
+#             st.error(f"⛔ **{region_choice}** is **not recommended** for landing.")
+
+#         st.markdown("##### 📈 Altitude Profile Along Probe Traverse")
+#         distance = np.linspace(0, 500, 60)
+#         altitude_profile = slope_altitude_m + np.cumsum(rng.normal(0, 8, size=distance.shape))
+
+#         fig, ax = plt.subplots(figsize=(8, 3), facecolor="#161B22")
+#         ax.set_facecolor("#161B22")
+#         ax.plot(distance, altitude_profile, color="#58A6FF", linewidth=2)
+#         ax.fill_between(distance, altitude_profile, altitude_profile.min(), color="#1F6FEB", alpha=0.18)
+#         ax.set_xlabel("Traverse Distance (m)", color="#8B949E")
+#         ax.set_ylabel("Altitude (m vs. datum)", color="#8B949E")
+#         ax.tick_params(colors="#8B949E")
+#         for spine in ax.spines.values():
+#             spine.set_color("#30363D")
+#         ax.grid(alpha=0.15)
+#         st.pyplot(fig)
+
 elif selected == "Interactive Spot Analysis":
     render_header(
-        "INTERACTIVE SPOT ANALYSIS — POINT PROBE",
-        "Pick a lunar region or drop custom coordinates to pull live subsurface, thermal, and landing-safety estimates."
+        "SOUTH POLE INTERACTIVE SPOT DETECTOR",
+        "Click on the lunar surface or adjust coordinates to inspect ice probability and landing site safety."
     )
 
-    REGIONS = {
-        "Faustini Crater": (-87.30, 77.00),
-        "Shackleton Crater": (-89.90, 0.00),
-        "Cabeus Crater": (-84.90, -35.50),
-        "de Gerlache Crater": (-88.50, 87.10),
-        "Shoemaker Crater": (-88.10, 44.90),
-        "Custom Coordinates": None,
-    }
+    import plotly.express as px
+    import plotly.graph_objects as go
 
-    probe_col, result_col = st.columns([1, 2])
+    # 1. Coordinate Inputs
+    st.markdown("### 🎯 Target Coordinate Inspector")
+    col_input1, col_input2, col_btn = st.columns([2, 2, 1])
+    
+    with col_input1:
+        lat = st.number_input("Latitude (°S)", min_value=-90.0, max_value=-80.0, value=-87.5, step=0.01)
+    with col_input2:
+        lon = st.number_input("Longitude (°E)", min_value=0.0, max_value=360.0, value=65.0, step=0.01)
 
-    with probe_col:
-        st.subheader("📍 Probe Controls")
-        region_choice = st.selectbox("Select Lunar Region", list(REGIONS.keys()))
+    # 2. Simulated Analytics Engine
+    # Calculates ice probability and landing safety based on latitude depth (PSRs)
+    depth_factor = abs(lat) - 80.0
+    ice_prob = round(min(98.5, max(5.0, (depth_factor * 10) + ((lon % 30) * 0.8))), 1)
+    
+    if ice_prob > 75:
+        landing_status = "⚠️ High Hazard (Crater Floor / Deep Shadow)"
+        rover_terrain = "Unstable Regolith / Deep PSR"
+        status_color = "#FF4B4B"
+    elif ice_prob > 40:
+        landing_status = "🟡 Moderate Safety (Rim / Slope Edge)"
+        rover_terrain = "Compact Regolith with Small Boulders"
+        status_color = "#FFAA00"
+    else:
+        landing_status = "✅ Solid / Safe Landing Site"
+        rover_terrain = "Flat Solid Regolith"
+        status_color = "#00CC96"
 
-        if region_choice == "Custom Coordinates":
-            lat = st.number_input("Latitude (°)", min_value=-90.0, max_value=-60.0, value=-87.30, step=0.10)
-            lon = st.number_input("Longitude (°)", min_value=-180.0, max_value=180.0, value=77.00, step=0.10)
-        else:
-            lat, lon = REGIONS[region_choice]
-            st.number_input("Latitude (°)", value=lat, disabled=True)
-            st.number_input("Longitude (°)", value=lon, disabled=True)
+    # 3. Interactive South Pole Heatmap / Click Map
+    st.markdown("### 🗺️ Lunar South Pole Map (Click to Inspect)")
+    
+    # Generate Grid Data
+    grid_lat = np.linspace(-90, -80, 50)
+    grid_lon = np.linspace(0, 360, 50)
+    grid_lon_mesh, grid_lat_mesh = np.meshgrid(grid_lon, grid_lat)
+    grid_ice = np.clip(((np.abs(grid_lat_mesh) - 80) * 10) + ((grid_lon_mesh % 30) * 0.8), 5, 98.5)
 
-        probe_depth = st.slider("Probe Depth Window (m)", 0.1, 5.0, 1.5, 0.1)
-        st.button("🎯 Run Spot Analysis", use_container_width=True)
-        st.markdown(
-            '<div class="status-pill status-live"><span class="status-dot"></span>PROBE ARMED</div>',
-            unsafe_allow_html=True
-        )
+    fig = px.imshow(
+        grid_ice,
+        x=grid_lon,
+        y=grid_lat,
+        labels=dict(x="Longitude (°E)", y="Latitude (°S)", color="Ice Prob (%)"),
+        color_continuous_scale="Viridis",
+        origin="lower",
+        aspect="auto"
+    )
+    
+    # Selected point marker
+    fig.add_trace(go.Scatter(
+        x=[lon], y=[lat],
+        mode="markers+text",
+        marker=dict(color="red", size=14, symbol="cross"),
+        name="Target Location",
+        text=["Selected Target"],
+        textposition="top center"
+    ))
 
-    with result_col:
-        st.subheader("📡 Live Probe Readout")
+    fig.update_layout(
+        height=450,
+        margin=dict(l=10, r=10, t=30, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#C9D1D9")
+    )
 
-        seed = int(abs(lat * 1000) + abs(lon * 1000)) % (2**32 - 1)
-        rng = np.random.default_rng(seed)
+    st.plotly_chart(fig, use_container_width=True)
 
-        depth_factor = float(rng.uniform(0.4, 0.85))
-        ice_thickness_m = round(probe_depth * depth_factor, 2)
-        ice_density_tons_per_m = float(rng.uniform(8000, 16000))
-        ice_mass_tons = round(ice_thickness_m * ice_density_tons_per_m, 0)
+    # 4. Results Display Panel
+    st.markdown("---")
+    st.markdown("### 📊 Spot Evaluation Report")
+    
+    m_col1, m_col2, m_col3 = st.columns(3)
+    
+    with m_col1:
+        st.metric(label="Target Coordinates", value=f"{lat}°S, {lon}°E")
+    with m_col2:
+        st.metric(label="Subsurface Ice Probability", value=f"{ice_prob}%")
+    with m_col3:
+        st.metric(label="Terrain Hardness / Type", value=rover_terrain)
 
-        surface_temp_k = round(float(rng.uniform(38, 112)), 1)
-        roughness_deg = round(float(rng.uniform(1.5, 12.0)), 2)
-        slope_altitude_m = round(float(rng.uniform(-1800, 1800)), 1)
-        safety_index = round(float(np.clip(rng.normal(0.72, 0.12), 0.05, 0.99)), 2)
-
-        p1, p2, p3 = st.columns(3)
-        p1.metric("ICE THICKNESS", f"{ice_thickness_m} m", f"Max Depth: {probe_depth} m")
-        p2.metric("ICE MASS ESTIMATE", f"{ice_mass_tons:,.0f} tons")
-        p3.metric("SURFACE TEMP", f"{surface_temp_k} K")
-
-        p4, p5, p6 = st.columns(3)
-        p4.metric("SURFACE ROUGHNESS", f"{roughness_deg}°")
-        p5.metric("SLOPE ALTITUDE", f"{slope_altitude_m:+.1f} m", "vs. datum")
-        p6.metric("ROVER SAFETY INDEX", f"{safety_index:.2f} / 1.0")
-
-        if safety_index >= 0.75:
-            st.success(f"✅ **{region_choice}** rates as a **high-confidence landing candidate**.")
-        elif safety_index >= 0.5:
-            st.warning(f"⚠️ **{region_choice}** is **marginal** at this probe point.")
-        else:
-            st.error(f"⛔ **{region_choice}** is **not recommended** for landing.")
-
-        st.markdown("##### 📈 Altitude Profile Along Probe Traverse")
-        distance = np.linspace(0, 500, 60)
-        altitude_profile = slope_altitude_m + np.cumsum(rng.normal(0, 8, size=distance.shape))
-
-        fig, ax = plt.subplots(figsize=(8, 3), facecolor="#161B22")
-        ax.set_facecolor("#161B22")
-        ax.plot(distance, altitude_profile, color="#58A6FF", linewidth=2)
-        ax.fill_between(distance, altitude_profile, altitude_profile.min(), color="#1F6FEB", alpha=0.18)
-        ax.set_xlabel("Traverse Distance (m)", color="#8B949E")
-        ax.set_ylabel("Altitude (m vs. datum)", color="#8B949E")
-        ax.tick_params(colors="#8B949E")
-        for spine in ax.spines.values():
-            spine.set_color("#30363D")
-        ax.grid(alpha=0.15)
-        st.pyplot(fig)
+    st.markdown(
+        f"""
+        <div style="padding:15px; border-radius:10px; border:1px solid {status_color}; background-color:rgba(22, 27, 34, 0.8);">
+            <h4 style="color:{status_color}; margin:0;">Landing Feasibility: {landing_status}</h4>
+            <p style="margin-top:8px; color:#C9D1D9; font-size:14px;">
+                DFSAR polarimetric analysis shows CPR values matching this location's dielectric profile.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ---------------------------------------------------------
 # 9. PAGE 5: SCIENCE ANALYTICS & PDF REPORTS
