@@ -7,91 +7,6 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
-import streamlit as st
-import heapq
-
-
-# ==========================================
-# HELPER & PATHFINDING FUNCTIONS
-# ==========================================
-
-def calculate_slope(dem, cell_size=2.5):
-    """Calculates slope map from Elevation DEM in degrees."""
-    dydx, dydy = np.gradient(dem, cell_size)
-    slope = np.arctan(np.sqrt(dydx**2 + dydy**2)) * (180.0 / np.pi)
-    return slope
-
-def astar_lunar_pathfinding(dem_grid, ice_prob_grid, start, goal, max_slope_limit=15.0):
-    """A* Trajectory Planner balancing Slope Hazard Avoidance and Ice Discovery."""
-    rows, cols = dem_grid.shape
-    slope_grid = calculate_slope(dem_grid)
-    
-    cost_grid = np.where(slope_grid > max_slope_limit, np.inf, 1.0 + (slope_grid / 2.0))
-    cost_grid -= (ice_prob_grid / 100.0) * 0.5
-    cost_grid = np.clip(cost_grid, 0.1, None)
-
-    neighbors = [(-1,0), (1,0), (0,-1), (0,1), (-1,-1), (-1,1), (1,-1), (1,1)]
-    
-    open_set = []
-    heapq.heappush(open_set, (0, start))
-    
-    came_from = {}
-    g_score = {start: 0}
-    
-    def heuristic(a, b):
-        return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
-
-    while open_set:
-        _, current = heapq.heappop(open_set)
-
-        if current == goal:
-            path = []
-            while current in came_from:
-                path.append(current)
-                current = came_from[current]
-            path.append(start)
-            return path[::-1]
-
-        for dr, dc in neighbors:
-            neighbor = (current[0] + dr, current[1] + dc)
-            
-            if 0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols:
-                if np.isinf(cost_grid[neighbor]):
-                    continue
-                
-                step_cost = np.sqrt(dr**2 + dc**2) * cost_grid[neighbor]
-                tentative_g_score = g_score[current] + step_cost
-                
-                if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
-                    came_from[neighbor] = current
-                    g_score[neighbor] = tentative_g_score
-                    f_score = tentative_g_score + heuristic(neighbor, goal)
-                    heapq.heappush(open_set, (f_score, neighbor))
-
-    return None
-
-# ==========================================
-# STREAMLIT UI APP
-# ==========================================
-
-st.title("Lunar Rover Pathfinding Dashboard")
-
-# Example usage within your page logic
-if st.button("Calculate Optimal Path"):
-    # Mock data arrays for demonstration
-    dem = np.random.uniform(-100, 200, size=(100, 100))
-    ice_prob = np.random.uniform(0, 100, size=(100, 100))
-    
-    start_pos = (10, 10)
-    goal_pos = (85, 90)
-    
-    # Run pathfinding
-    path = astar_lunar_pathfinding(dem, ice_prob, start_pos, goal_pos)
-    
-    if path:
-        st.success(f"Path calculated successfully! Total steps: {len(path)}")
-    else:
-        st.error("No valid path found within slope safety limits.")
 
 # Try importing top navbar
 try:
@@ -405,30 +320,29 @@ with st.sidebar:
 
 # ---------------------------------------------------------
 # 5. PAGE 1: COMMAND CENTER
-# Integration Example for Page 1
+# ---------------------------------------------------------
 if selected == "Rover Path Animation":
-    # 1. Generate Synthetic Faustini DEM & Ice Probability Data
-    np.random.seed(42)
-    dem = np.random.uniform(-100, 200, size=(100, 100))
-    ice_prob = np.random.uniform(0, 100, size=(100, 100))
-    
-    start_point = (10, 10)
-    goal_point = (85, 90)
-    
-    # 2. Run Pathfinder
-    path = astar_lunar_pathfinding(dem, ice_prob, start_point, goal_point)
-    
-    if path:
-        # Calculate real-world metrics (assuming 2.5m pixel resolution)
-        total_steps = len(path)
-        traverse_m = total_steps * 2.5
-        energy_kj = traverse_m * 0.0157 # Estimated energy cost rate
-        
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Calculated Distance", f"{traverse_m:,.0f} m")
-        col2.metric("Energy Consumption", f"{energy_kj:.1f} kJ")
-        col3.metric("Drive Time", f"{traverse_m / 175.0:.1f} hr") # Speed: ~175 m/h
-        col4.metric("Grid Trajectory Steps", f"{total_steps} nodes")
+    render_header(
+        "ROVER TRAVERSE PATH SIMULATION",
+        "Autonomous A* pathfinding across Faustini crater DEM, slope hazard avoidance, and thermal cold-trap entry."
+    )
+
+    # Cloudinary Video Player
+    video_url = "https://res.cloudinary.com/sxgvipwg/video/upload/v1788547209/rover_animation.mp4"
+    st.video(video_url)
+
+    # Metrics Row
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric(label="Traverse Distance", value="2,068 m")
+    with col2:
+        st.metric(label="Energy Consumption", value="32.5 kJ")
+    with col3:
+        st.metric(label="Drive Time", value="11.8 hr")
+    with col4:
+        st.metric(label="PSR Coverage", value="15.6%")
+
+    st.caption("LUPEX-class 27kg Rover · Trajectory over Faustini crater permanently shadowed region.")
 
 
 elif selected == "Command Center":
