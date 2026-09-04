@@ -231,8 +231,8 @@ def show_image_inspectable(path, caption=None, expander_label="🔍 Inspect Full
 # ---------------------------------------------------------
 # ---------------------------------------------------------
 # 3. TOP NAVIGATION BAR
-# ---------------------------------------------------------
 NAV_LABELS = [
+    "Rover Path Animation",
     "Command Center",
     "Radar & Ice Predictor",
     "Fullscreen 3D Terrain",
@@ -240,7 +240,17 @@ NAV_LABELS = [
     "Science Analytics & PDF",
     "About Mission & Tech Stack",
 ]
-NAV_ICONS = ["rocket-takeoff", "broadcast-pin", "globe-americas", "geo-alt", "bar-chart-line", "info-circle"]
+
+# Added 'play-circle' as the 7th icon to match the 7 labels
+NAV_ICONS = [
+    "play-circle",
+    "rocket-takeoff",
+    "broadcast-pin",
+    "globe-americas",
+    "geo-alt",
+    "bar-chart-line",
+    "info-circle"
+]
 
 if option_menu is not None:
     selected = option_menu(
@@ -253,7 +263,7 @@ if option_menu is not None:
         styles={
             "container": {
                 "padding": "6px 8px",
-                "background-color": "#0D1117 !important",  # Deep dark container background
+                "background-color": "#0D1117 !important",
                 "border-radius": "14px",
                 "border": "1px solid #30363D",
                 "margin-bottom": "20px",
@@ -268,12 +278,12 @@ if option_menu is not None:
             "nav-link": {
                 "font-size": "12.5px",
                 "font-weight": "600",
-                "color": "#C9D1D9 !important",  # Crisp white-gray text
+                "color": "#C9D1D9 !important",
                 "text-align": "center",
                 "margin": "0px 2px",
                 "border-radius": "9px",
                 "padding": "8px 10px",
-                "background-color": "#161B22 !important",  # Dark grey button fill
+                "background-color": "#161B22 !important",
                 "border": "1px solid #21262D",
                 "height": "42px",
                 "display": "flex",
@@ -282,7 +292,7 @@ if option_menu is not None:
                 "white-space": "nowrap",
             },
             "nav-link-selected": {
-                "background": "linear-gradient(135deg, #1F6FEB, #388BFD) !important",  # Neon blue active tab
+                "background": "linear-gradient(135deg, #1F6FEB, #388BFD) !important",
                 "color": "#FFFFFF !important",
                 "border": "1px solid #58A6FF",
                 "box-shadow": "0 0 12px rgba(31, 111, 235, 0.4)",
@@ -309,7 +319,31 @@ with st.sidebar:
 # ---------------------------------------------------------
 # 5. PAGE 1: COMMAND CENTER
 # ---------------------------------------------------------
-if selected == "Command Center":
+if selected == "Rover Path Animation":
+    render_header(
+        "ROVER TRAVERSE PATH SIMULATION",
+        "Autonomous A* pathfinding across Faustini crater DEM, slope hazard avoidance, and thermal cold-trap entry."
+    )
+
+    # Cloudinary Video Player
+    video_url = "https://res.cloudinary.com/sxgvipwg/video/upload/v1788547209/rover_animation.mp4"
+    st.video(video_url)
+
+    # Metrics Row
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric(label="Traverse Distance", value="2,068 m")
+    with col2:
+        st.metric(label="Energy Consumption", value="32.5 kJ")
+    with col3:
+        st.metric(label="Drive Time", value="11.8 hr")
+    with col4:
+        st.metric(label="PSR Coverage", value="15.6%")
+
+    st.caption("LUPEX-class 27kg Rover · Trajectory over Faustini crater permanently shadowed region.")
+
+
+elif selected == "Command Center":
     render_header(
         "CHANDRAYAAN-2 DFSAR SUBSURFACE ICE PIPELINE",
         "Dual-Frequency Synthetic Aperture Radar & Diviner Thermal Integration for Lunar South Pole Prospecting"
@@ -422,8 +456,26 @@ elif selected == "Fullscreen 3D Terrain":
         </style>
     """, unsafe_allow_html=True)
 
-    if os.path.exists("results/interactive_dashboard.html"):
-        with open("results/interactive_dashboard.html", "r", encoding="utf-8") as f:
+    # Check both potential output paths
+    possible_paths = [
+        "results/interactive_dashboard.html",
+        "results/figures/interactive_dashboard.html",
+        "results/figures/00_dashboard.html"
+    ]
+
+    html_path = next((p for p in possible_paths if os.path.exists(p)), None)
+
+    # Auto-generate if missing on the cloud server
+    if not html_path:
+        import subprocess
+        try:
+            subprocess.run(["python", "generate_interactive.py"], check=True)
+            html_path = next((p for p in possible_paths if os.path.exists(p)), None)
+        except Exception as e:
+            st.warning(f"Could not auto-generate dashboard: {e}")
+
+    if html_path and os.path.exists(html_path):
+        with open(html_path, "r", encoding="utf-8") as f:
             html_content = f.read()
         st.markdown('<div class="glass-frame-wrap">', unsafe_allow_html=True)
         components.html(html_content, height=900, scrolling=True)
@@ -431,7 +483,6 @@ elif selected == "Fullscreen 3D Terrain":
         st.caption("Drag to rotate · Scroll to zoom · Shift-drag to pan across the Faustini basin mesh.")
     else:
         st.error("3D Dashboard HTML missing. Run `python generate_interactive.py` to compile.")
-
 # ---------------------------------------------------------
 # 8. PAGE 4: INTERACTIVE SPOT ANALYSIS
 # ---------------------------------------------------------
