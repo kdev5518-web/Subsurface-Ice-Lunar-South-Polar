@@ -209,59 +209,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-    <style>
-    .image-card {
-        border: 1px solid #2d3748;
-        border-radius: 10px;
-        padding: 10px;
-        background-color: #1a202c;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-st.title("Lunar Radar & Ice Prediction Analytics")
-
-# Side-by-side Layout for better visual appeal
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("### 📡 Subsurface Radar Scan")
-    
-    # Styled Heatmap for Radar Data
-    fig_radar, ax1 = plt.subplots(figsize=(5, 4))
-    fig_radar.patch.set_facecolor('#0e1117')
-    ax1.set_facecolor('#0e1117')
-    
-    # Example Radar Signal Heatmap
-    radar_data = np.random.rand(50, 50)
-    im1 = ax1.imshow(radar_data, cmap='plasma', aspect='auto')
-    ax1.tick_params(colors='white')
-    ax1.set_title("GPR Signal Reflectivity", color='white')
-    plt.colorbar(im1, ax=ax1)
-    
-    st.pyplot(fig_radar)
-    st.caption("Status: **Active Scan** | Penetration Depth: **2.5m**")
-
-with col2:
-    st.markdown("### 🧊 Water-Ice Probability Map")
-    
-    # Styled Heatmap for Ice Predictor
-    fig_ice, ax2 = plt.subplots(figsize=(5, 4))
-    fig_ice.patch.set_facecolor('#0e1117')
-    ax2.set_facecolor('#0e1117')
-    
-    # Example Ice Probability Map
-    ice_data = np.random.uniform(0, 100, size=(50, 50))
-    im2 = ax2.imshow(ice_data, cmap='Blues', aspect='auto')
-    ax2.tick_params(colors='white')
-    ax2.set_title("Ice Concentration (%)", color='white')
-    plt.colorbar(im2, ax=ax2)
-    
-    st.pyplot(fig_ice)
-    st.caption("Model Confidence: **94.2%** | High Deposit Target Detected")
-
 
 def render_header(title, subtitle):
     st.markdown(f"""
