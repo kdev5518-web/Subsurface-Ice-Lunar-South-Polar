@@ -5,6 +5,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 from PIL import Image
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Try importing top navbar
 try:
@@ -577,8 +579,7 @@ elif selected == "Interactive Spot Analysis":
         "Click on the lunar surface or adjust coordinates to inspect ice probability and landing site safety."
     )
 
-    import plotly.express as px
-    import plotly.graph_objects as go
+   
 
     # 1. Coordinate Inputs
     st.markdown("### 🎯 Target Coordinate Inspector")
